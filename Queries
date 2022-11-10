@@ -1,0 +1,84 @@
+#total unique visitors
+SELECT
+  COUNT(*) AS product_views,
+  COUNT(DISTINCT visitorID) AS unique_visitors
+FROM dataset.name 
+
+#total unique visitors by the referring site (channelGrouping):
+SELECT
+  COUNT(DISTINCT visitorID) AS unique_visitors,
+  channelGrouping
+FROM dataset.name
+GROUP BY channelGrouping
+ORDER BY channelGrouping DESC;
+
+#list all the unique product names (v2ProductName) alphabetically
+SELECT
+  (v2ProductName) AS ProductName
+FROM dataset.name
+GROUP BY ProductName
+ORDER BY ProductName
+
+
+
+#list the five products with the most views (product_views) from all visitors (include people who have viewed 
+the same product more than once). Your query counts number of times a product (v2ProductName) was viewed (product_views), 
+puts the list in descending order, and lists the top 5 entries:
+SELECT
+  COUNT(*) AS product_views,
+  (v2ProductName) AS ProductName
+FROM dataset.name
+WHERE type = 'PAGE'
+GROUP BY v2ProductName
+ORDER BY product_views DESC
+LIMIT 5;
+
+#Refine the query to no longer double-count product views for visitors who have viewed a product many times. 
+Each distinct product view should only count once per visitor.
+
+WITH unique_product_views_by_person AS (
+-- find each unique product viewed by each visitor
+SELECT
+ fullVisitorId,
+ (v2ProductName) AS ProductName
+FROM dataset.name
+WHERE type = 'PAGE'
+GROUP BY fullVisitorId, v2ProductName )
+-- aggregate the top viewed products and sort them
+SELECT
+  COUNT(*) AS unique_view_count,
+  ProductName
+FROM unique_product_views_by_person
+GROUP BY ProductName
+ORDER BY unique_view_count DESC
+LIMIT 5
+
+
+#expand your previous query to include the total number of distinct products 
+ordered and the total number of total units ordered (productQuantity)
+#standardSQL
+SELECT
+  COUNT(*) AS product_views,
+  COUNT(productQuantity) AS orders,
+  SUM(productQuantity) AS quantity_product_ordered,
+  v2ProductName
+FROM dataset.name
+WHERE type = 'PAGE'
+GROUP BY v2ProductName
+ORDER BY product_views DESC
+LIMIT 5;
+
+#include the average amount of product per order (total number of units ordered/total number of orders, 
+or SUM(productQuantity)/COUNT(productQuantity)
+#standardSQL
+SELECT
+  COUNT(*) AS product_views,
+  COUNT(productQuantity) AS orders,
+  SUM(productQuantity) AS quantity_product_ordered,
+  SUM(productQuantity) / COUNT(productQuantity) AS avg_per_order,
+  (v2ProductName) AS ProductName
+FROM dateset.name
+WHERE type = 'PAGE'
+GROUP BY v2ProductName
+ORDER BY product_views DESC
+LIMIT 5;
