@@ -1,0 +1,5 @@
+#standardSQL
+SELECT COUNT(*) as num_duplicate_rows, * FROM dataset.name
+GROUP BY
+vititorID, time, country, city
+HAVING num_duplicate_rows > 1;
