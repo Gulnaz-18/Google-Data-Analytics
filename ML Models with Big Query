@@ -1,0 +1,117 @@
+1. Create Dataset austin
+2. Create the first machine learning model to predict the trip duration for bike trips.
+The features of this model must incorporate the starting station name, the hour the trip started, 
+the weekday of the trip, and the address of the start station labeled as location. You must use 2016 data only to train this model.
+
+Solution:
+CREATE OR REPLACE MODEL austin.location_model
+OPTIONS
+  (model_type='linear_reg', labels=['duration_minutes']) AS
+SELECT
+    start_station_name,
+    EXTRACT(HOUR FROM start_time) AS start_hour,
+    EXTRACT(DAYOFWEEK FROM start_time) AS day_of_week,
+    duration_minutes,
+    address as location
+FROM
+    `bigquery-public-data.austin_bikeshare.bikeshare_trips` AS trips
+JOIN
+    `bigquery-public-data.austin_bikeshare.bikeshare_stations` AS stations
+ON
+    trips.start_station_name = stations.name
+WHERE
+    EXTRACT(YEAR FROM start_time) = 2016
+    AND duration_minutes > 0
+   
+3. Create the second machine learning model to predict the trip duration for bike trips.
+The features of this model must incorporate the starting station name, 
+the bike share subscriber type and the start time for the trip. You must also use 2016 data only to train this model.
+
+Solution: 
+
+CREATE OR REPLACE MODEL austin.subscriber_model
+OPTIONS
+  (model_type='linear_reg', labels=['duration_minutes']) AS
+SELECT
+    start_station_name,
+    EXTRACT(HOUR FROM start_time) AS start_hour,
+    subscriber_type,
+    duration_minutes
+FROM `bigquery-public-data.austin_bikeshare.bikeshare_trips` AS trips
+WHERE EXTRACT(YEAR FROM start_time) = 2016
+
+4. Evaluate each of the machine learning models against 2019 data only using separate queries.
+Your queries must report both the Mean Absolute Error and the Root Mean Square Error.
+
+Model 1:
+SELECT
+  SQRT(mean_squared_error) AS rmse,
+  mean_absolute_error
+FROM
+  ML.EVALUATE(MODEL austin.location_model, (
+  SELECT
+    start_station_name,
+    EXTRACT(HOUR FROM start_time) AS start_hour,
+    EXTRACT(DAYOFWEEK FROM start_time) AS day_of_week,
+    duration_minutes,
+    address as location
+  FROM
+    `bigquery-public-data.austin_bikeshare.bikeshare_trips` AS trips
+  JOIN
+   `bigquery-public-data.austin_bikeshare.bikeshare_stations` AS stations
+  ON
+    trips.start_station_name = stations.name
+  WHERE EXTRACT(YEAR FROM start_time) = 2019)
+)
+Model 2:
+SELECT
+  SQRT(mean_squared_error) AS rmse,
+  mean_absolute_error
+FROM
+  ML.EVALUATE(MODEL austin.subscriber_model, (
+  SELECT
+    start_station_name,
+    EXTRACT(HOUR FROM start_time) AS start_hour,
+    subscriber_type,
+    duration_minutes
+  FROM
+    `bigquery-public-data.austin_bikeshare.bikeshare_trips` AS trips
+  WHERE
+    EXTRACT(YEAR FROM start_time) = 2019)
+)
+
+5. When both models have been created and evaulated, use the second model, that uses subscriber_type as a feature, 
+to predict average trip length for trips from the busiest bike sharing station in 2019 where the subscriber type is Single Trip.
+
+Solution:
+Find the busiest station:
+SELECT
+  start_station_name,
+  COUNT(*) AS trips
+FROM
+  `bigquery-public-data.austin_bikeshare.bikeshare_trips`
+WHERE
+  EXTRACT(YEAR FROM start_time) = 2019
+GROUP BY
+  start_station_name
+ORDER BY
+  trips DESC
+  
+Predict trip duration:
+
+SELECT AVG(predicted_duration_minutes) AS average_predicted_trip_length
+FROM ML.predict(MODEL austin.subscriber_model, (
+SELECT
+    start_station_name,
+    EXTRACT(HOUR FROM start_time) AS start_hour,
+    subscriber_type,
+    duration_minutes
+FROM
+  `bigquery-public-data.austin_bikeshare.bikeshare_trips`
+WHERE 
+  EXTRACT(YEAR FROM start_time) = 2019
+  AND subscriber_type = 'Single Trip'
+  AND start_station_name = '21st & Speedway @PCL'))
+
+
+
