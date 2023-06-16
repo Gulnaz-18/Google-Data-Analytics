@@ -1,0 +1,50 @@
+Task1. 
+dimension: is_search_source {
+    type: yesno
+    sql: ${users.traffic_source} = "Search";;
+  }
+  
+  measure: sales_from_complete_search_users {
+    type: sum
+    sql: ${TABLE}.sale_price ;;
+    filters: [order_items.status: "Complete", is_search_source: "yes"]
+    value_format_name: usd
+  }
+  
+  measure: total_gross_margin {
+    type: sum
+    sql: ${TABLE}.sale_price - ${inventory_items.cost};;
+    value_format_name: usd
+  }
+  
+  dimension: return_days{
+    type: number
+    sql: DATE_DIFF($(order_items.delivered_date), $(order_items.returned_date), DAY);;
+  }
+  
+Task2.
+  join: user_details {
+    type:  left_outer
+    sql_on: ${order_items.user_id} = ${user_details.user_id} ;;
+    relationsip:many_to_one
+    }
+    
+Task3.     
+    sql_always_where:$(ale_price) >= 391;;
+  conditionally_filter: {
+    filters: [order_items.shipped_date: "2018"]
+    unless: [order_items.status, order_items.delivered_date]
+  }
+  
+  sql_always_having: $(average_sale_price) > 90;;
+  always_filter: {
+    filters: [order_items.status: "Shipped", users.state: "California", 
+      users.traffic_source:"Search"]
+  }
+Task4.  
+  datagroup: order_items_challenge_datagroup{
+  # sql_trigger: SELECT MAX(order_item_id) from order_items ;;
+  max_cache_age: "4 hour"
+}
+
+persist_with: order_items_challenge_datagroup
