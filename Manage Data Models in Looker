@@ -1,0 +1,167 @@
+dimension: profit {
+    label: "Profit"
+    description: "profit"
+    type: number
+    sql: ${sale_price} - ${products.cost};;
+    value_format_name: usd
+  }
+  measure: total_profit {
+    label: "Total profit"
+    description: "Total Profit"
+    type: sum
+    sql: ${profit};;
+    value_format_name: usd
+  }
+  
+  datagroup: weekly_datagroup_36Xq {
+  max_cache_age: "168 hour"
+}
+persist_with: weekly_datagroup_36Xq 
+
+
+explore: +order_items {
+  label: ""
+  aggregate_table: weekly_aggregate_revenue_profit {
+    query: {
+      dimensions: [order_items.created_date]
+      measures: [order_items.total_revenue, order_items.total_profit]
+    }
+    materialization: {
+      datagroup_trigger: weekly_datagroup_36Xq
+      increment_key: "created_date"
+    }
+  }
+}
+
+view: user_pii_challenge_8ieh {
+  extension: required
+  dimension: first_name {
+    type: string
+    sql: ${TABLE}.first_name ;;
+  }
+  dimension: last_name {
+    type: string
+    sql: ${TABLE}.last_name ;;
+  }
+
+  dimension: latitude {
+    type: number
+    sql: ${TABLE}.latitude ;;
+  }
+
+  dimension: longitude {
+    type: number
+    sql: ${TABLE}.longitude ;;
+  }
+  dimension: email {
+    type: string
+    sql: ${TABLE}.email ;;
+  }
+  dimension: id {
+    primary_key: yes
+    type: number
+    sql: ${TABLE}.id ;;
+  }
+  }
+  
+  
+  view: users {
+  sql_table_name: `cloud-training-demos.looker_ecomm.users`
+    ;;
+  drill_fields: [id]
+
+  dimension: id {
+    primary_key: yes
+    type: number
+    hidden: yes
+    sql: ${TABLE}.id ;;
+  }
+
+  dimension: age {
+    type: number
+    sql: ${TABLE}.age ;;
+  }
+
+  dimension: city {
+    type: string
+    sql: ${TABLE}.city ;;
+  }
+
+  dimension: country {
+    type: string
+    map_layer_name: countries
+    sql: ${TABLE}.country ;;
+  }
+
+  dimension_group: created {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.created_at ;;
+  }
+
+  dimension: email {
+    type: string
+    hidden: yes
+    sql: ${TABLE}.email ;;
+  }
+
+  dimension: first_name {
+    type: string
+    hidden: yes
+    sql: ${TABLE}.first_name ;;
+  }
+
+  dimension: gender {
+    type: string
+    sql: ${TABLE}.gender ;;
+  }
+
+  dimension: last_name {
+    type: string
+    hidden: yes
+    sql: ${TABLE}.last_name ;;
+  }
+
+  dimension: latitude {
+    type: number
+    hidden: yes
+    sql: ${TABLE}.latitude ;;
+  }
+
+  dimension: longitude {
+    type: number
+    hidden: yes
+    sql: ${TABLE}.longitude ;;
+  }
+
+  dimension: state {
+    type: string
+    sql: ${TABLE}.state ;;
+    map_layer_name: us_states
+  }
+
+  dimension: traffic_source {
+    type: string
+    sql: ${TABLE}.traffic_source ;;
+  }
+
+  dimension: zip {
+    type: zipcode
+    sql: ${TABLE}.zip ;;
+  }
+
+  measure: count {
+    type: count
+    drill_fields: [id, last_name, first_name, events.count, order_items.count]
+  }
+}
+group_label: "User Information (Challenge nKkf)"
+group_label: "Product Information (Challenge s1kF)"
